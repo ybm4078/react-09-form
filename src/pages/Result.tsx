@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router";
+import {useNavigate, useSearchParams} from "react-router";
 import { Card, Title, Wrap } from "../components/components.tsx";
 import styled from "styled-components";
 
@@ -28,8 +28,24 @@ const Value = styled.span`
     color: #222;
 `;
 
+const BackBtn = styled.button`
+    background: none;
+    border: none;
+    align-self: flex-start;
+    color: #4f46e5;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+        text-decoration: underline;
+    }
+`;
+
 function Result() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
 
     const username = searchParams.get("username");
     const password = searchParams.get("password");
@@ -39,6 +55,7 @@ function Result() {
     return (
         <Wrap>
             <Card as={"div"}>
+                <BackBtn onClick={() => navigate(-1)}>&larr; Back</BackBtn>
                 <Title>회원가입 결과</Title>
 
                 <Section>

@@ -1,7 +1,7 @@
-import { type ChangeEvent, type SubmitEvent, useState } from "react";
 import styled from "styled-components";
-import { useNavigate } from "react-router";
+import {useNavigate} from "react-router";
 import {Card, Title, Wrap} from "../components/components.tsx";
+import {useForm} from "react-hook-form";
 
 const Input = styled.input`
     padding: 14px;
@@ -35,137 +35,97 @@ const InputGroup = styled.div`
     flex-direction: column;
 `;
 
+// react-hook-form을 사용하려면,
+// 이 컴포넌트에서 react-hook-form이 연결해야 하는 input의 갯수와 이름을 알려줘야 함
+// 그렇게 타입을 하나 만들고 그걸 useForm<FormValues>() 제네릭을 통해 넣어줌
+type FormValues = {
+    username: string;
+    password: string;
+    name: string;
+    email: string;
+}
+
 function Home() {
     const navigate = useNavigate();
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
 
-    const [usernameError, setUsernameError] = useState<string | null>(null);
-    const [passwordError, setPasswordError] = useState<string | null>(null);
-    const [nameError, setNameError] = useState<string | null>(null);
-    const [emailError, setEmailError] = useState<string | null>(null);
+    // 순수 리액트를 통해 input이나 select 등 사용자의 입력을 받아서 (어디든) 제출하려면
+    // 1. 화면에 사용자가 입력해야 할 폼을 작성
+    // 2. 각 input에 대한 state를 생성
+    // 3. input과 state를 연결 (onChange 핸들러를 작성해서)
+    // 4. input에 입력 규칙이 존재한다면 제출 시 규칙 체크    (onSubmit 핸들러를 통해)
+    // 5. 에러 메세지가 추가로 존재해아 한다면 그에 대한 state 또한 필요
 
-    const handleChangeUsername = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-        setUsername(e.target.value);
-        if (username.length > 0) {
-            setUsernameError(null);
-        }
-    };
+    // 모든 state와 input들에 대해 내가 수동으로 작업을 함으로서 복잡해지는 코드를
+    // react-hook-form은 간략하고 규칙적으로 작성할 수 있도록 해줌
 
-    const handleChangePassword = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-        setPassword(e.target.value);
-        if (password.length > 0) {
-            setPasswordError(null);
-        }
-    };
+    // react-hook-form을 사용하기 위해서는 useForm() 메서드를 import하여
+    // 실행하여 반환되는 도구들을 객체 구조 분해를 통해 준비함
 
-    const handleChangeName = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-        setName(e.target.value);
-        if (name.length > 0) {
-            setNameError(null);
-        }
-    };
+    const {
+        register,   // 화면에 존재하는 input과 react-hook-form을 연결하는 기능
+        handleSubmit,   // react-hook-form에서 기재한 유효성 검사를 포함하여 submit 처리할 때 사용하는 기능
+        formState: {errors}, // formState라는 도구는 또다시 상자임. form에서 사용하는 상태값들이 여기서 객채로 들어옴
+                             // formState 안에 errors는 유효성 검사 시 오류 값이 저장되는 state 묶음
+    } = useForm<FormValues>();   // react-hook-form 패키지를 내 프로젝트에 걸맞게 맞춰 펼쳐놓는 행위
+    // 여러개의 도구가 포함된 상자(객체)를 돌려줌
+    // 그 도구들을 지칭해서 사용하기 위해 객체 구조 분해함
 
-    const handleChangeEmail = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-        setEmail(e.target.value);
-        if (email.length > 0) {
-            setEmailError(null);
-        }
-    };
+    // react-hook-form이 제공한 handleSubmit 함수는 handleSubmit(우리가쓰는 함수) 로 inSubmit에 넣어줘야 되고
+    // onSubmit이 발동되면, 유효성 검사를 진행하고 문제가 없으면 매개변수로 넣어준 핸들러 함수를 실행함
 
-    const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        const trimUsername = username.trim();
-        const trimPassword = password.trim();
-        const trimName = name.trim();
-        const trimEmail = email.trim();
-
-        // 문자열에 대해 이메일 주소가 맞는지를 판별하는 코드
-        // 1. split()   : 내가 원하는 문자열을 기준으로 나누어 배열을 만드는 메서드
-        // const emailParts = trimEmail.split("@");
-
-        if (!trimUsername) {
-            setUsernameError("아이디는 필수 값입니다.");
-        }
-        const passwordRegex =
-            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]).{6,}$/;
-        if (!passwordRegex.test(trimPassword)) {
-            setPasswordError("비밀번호는 영어 대소문자,숫자,특수문자를 1글자 이상 포함해야 합니다.")
-        }
-        if (trimPassword.length < 6) {
-            setPasswordError("비밀번호는 최소 6자리 이상이여야 합니다.");
-        }
-        if (!trimPassword) {
-            setPasswordError("비밀번호는 필수 값입니다.");
-        }
-        if (!trimName) {
-            setNameError("이름은 필수 값입니다.");
-        }
-        // 이메일 주소 체크
-        // string 타입에 includes("글자") 메서드 : "글자"가 string에 포함되어 있는지 여부 체크하여 boolean 반환
-        // 이메일 계정 앞자리엔 특수문자 "." 사용 가능 -> includes만으로는 체크가 부족함
-        // string에 사용할 수 있는 indexOf("글자") -> 해당 글자가 존재하는 자리수를 반환 (없으면 -1)
-        // string에 사용할 수 있는 lastIndexOf("글자") -> 해당 글자가 여러개일 때 마지막 존재의 자리수 반환
-        // const atIndex = trimEmail.indexOf("@");
-        // const lastDotIndex = trimEmail.lastIndexOf(".");
-        // if (!trimEmail.includes("@") || !trimEmail.includes(".") || (atIndex > lastDotIndex)) {
-        //     setEmailError("이메일 형식이 잘못되었습니다.");
-        // }
-
-        // 이메일 형식처럼, 어떠한 규칙성이 있는 형식에 대해 판별을 해줘야 할 때 "정규식"을 사용할 수 있음
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(trimEmail)) {
-            setEmailError("이메일 형식이 잘못되었습니다.");
-        }
-        if (!trimEmail) {
-            setEmailError("이메일은 필수 값입니다.");
-        }
-
-        if (usernameError || passwordError || nameError || emailError) {
-            return;
-        }
-
-        navigate(
-            `/result?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`,
-        );
-    };
+    const submitHandler = (data: FormValues) => {
+        // 쿼리스트링으로 2개 이상의 값이 전달 되어야 되는 거라면
+        // 각각 encodeURIComponent를 매 번 써줄게 아니라
+        // new URLSearchParams(객체).toString() 을 통해 한 번에 만들어주는게 이치에 맞음
+        const queryString = new URLSearchParams(data).toString();
+        navigate(`/result?${queryString}`);
+    }
 
     return (
         <Wrap>
-            <Card onSubmit={handleSubmit}>
+            <Card onSubmit={handleSubmit(submitHandler)}>
                 <Title>회원가입</Title>
                 <InputGroup>
                     <Input
                         placeholder={"아이디"}
-                        onChange={handleChangeUsername}
-                        value={username}
+                        {...register("username", {required: "아이디는 필수 값입니다"})}
                     />
-                    {usernameError && <ErrorMessage>{usernameError}</ErrorMessage>}
+                    {errors.username && <ErrorMessage>{errors.username.message}</ErrorMessage>}
                 </InputGroup>
                 <InputGroup>
                     <Input
                         placeholder={"비밀번호"}
                         type={"password"}
-                        onChange={handleChangePassword}
-                        value={password}
+                        {...register("password",{
+                            required:"비밀번호는 필수 값입니다",
+                            minLength: {
+                                value: 6,
+                                message: "비밀번호는 최소 6자 이상이여야 합니다."
+                            },
+                            maxLength: {
+                                value: 50,
+                                message: "비밀번호는 최대 50자 이하여야 합니다."
+                            }})}
                     />
-                    {passwordError && <ErrorMessage>{passwordError}</ErrorMessage>}
+                    {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
                 </InputGroup>
                 <InputGroup>
-                    <Input placeholder={"이름"} onChange={handleChangeName} value={name} />
-                    {nameError && <ErrorMessage>{nameError}</ErrorMessage>}
+                    <Input placeholder={"이름"} {...register("name",{required: "이름은 필수 값입니다"})} />
+                    {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
                 </InputGroup>
                 <InputGroup>
                     <Input
                         placeholder={"이메일"}
                         type={"email"}
-                        onChange={handleChangeEmail}
-                        value={email}
+                        {...register("email",{
+                            required: "이메일은 필수 값입니다",
+                            pattern: {
+                                value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                                message: "올바른 이메일 형식이 아닙니다."
+                            }
+                        })}
                     />
-                    {emailError && <ErrorMessage>{emailError}</ErrorMessage>}
+                    {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
                 </InputGroup>
                 <Button type={"submit"}>회원가입</Button>
             </Card>
